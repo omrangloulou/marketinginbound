@@ -1,0 +1,2152 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IRIS.SYSTEM — Sécurité visuelle active</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            iris: "#00D1FF",
+            ink: "#0A0A0A",
+            mist: "#F8FAFC",
+            fog: "#F1F5F9",
+            line: "rgba(10,10,10,0.10)"
+          },
+          fontFamily: { sans: ["Inter","system-ui","Segoe UI","Roboto","sans-serif"] },
+          boxShadow: {
+            soft: "0 18px 50px rgba(10,10,10,0.06)",
+            card: "0 30px 100px rgba(10,10,10,0.10)"
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root{
+      --iris:#00D1FF; --ink:#0A0A0A; --mist:#F8FAFC; --fog:#F1F5F9; --line: rgba(10,10,10,0.10);
+      --topbar-h: 40px;
+      --header-h: 80px;
+      --safe-top: calc(var(--topbar-h) + var(--header-h) + 18px);
+    }
+
+    body{
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--ink);
+      background: var(--mist);
+      overflow-x:hidden;
+    }
+
+    section{ scroll-margin-top: var(--safe-top); }
+
+    .hairline{ border-color: var(--line); }
+    .glass{ background: rgba(248, 250, 252, 0.82); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+    .card{ background:#fff; border:1px solid var(--line); box-shadow: var(--card); }
+    .btn{ position:relative; overflow:hidden; transform: translateZ(0); }
+    .btn:before{
+      content:""; position:absolute; inset:-120%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.40), transparent);
+      transform: rotate(18deg) translateX(-45%);
+      transition: transform 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn:hover:before{ transform: rotate(18deg) translateX(75%); }
+    .focus-ring:focus{ outline:none; box-shadow:0 0 0 4px rgba(0,209,255,0.25); }
+
+    .topbar{
+      position: fixed; top: 0; left:0; right:0; z-index: 70;
+      height: var(--topbar-h);
+      background: #0A0A0A; color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+
+    header{
+      position: fixed;
+      left:0; right:0;
+      top: var(--topbar-h);
+      height: var(--header-h);
+      z-index: 60;
+    }
+
+    main{ padding-top: calc(var(--topbar-h) + var(--header-h) + 8px); }
+
+    /* HERO */
+    .hero{ position:relative; min-height: 82vh; }
+    .hero video{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; filter: contrast(1.07) saturate(1.05) brightness(0.82);
+      transform: scale(1.02);
+    }
+    .heroOverlay{
+      position:absolute; inset:0; pointer-events:none;
+      background: linear-gradient(180deg, rgba(10,10,10,0.72), rgba(10,10,10,0.38) 55%, rgba(248,250,252,1));
+    }
+    .glowText{ text-shadow: 0 10px 44px rgba(0,0,0,0.45); }
+
+    /* BEFORE/AFTER */
+    .ba-wrap{
+      position: relative; overflow: hidden;
+      border-radius: 18px; border:1px solid var(--line);
+      box-shadow: var(--card); background:#fff;
+    }
+    .ba-img{ width:100%; height: 520px; object-fit: cover; display:block; background: var(--fog); }
+    @media (max-width: 640px){ .ba-img{ height: 380px; } }
+    .ba-after{ position:absolute; inset:0; width: 50%; overflow:hidden; border-right: 3px solid var(--iris); box-shadow: 15px 0 50px rgba(0,209,255,0.20); }
+    .ba-handle{
+      position:absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 56px; height: 56px; border-radius: 999px;
+      background: #fff; border: 1px solid var(--line);
+      display:grid; place-items:center;
+      box-shadow: 0 18px 46px rgba(10,10,10,0.18);
+      cursor: ew-resize; z-index: 20;
+      user-select:none;
+      touch-action:none;
+    }
+
+    /* Overlays */
+    #drawerOverlay, #checkoutOverlay, #promoOverlay, #cookieModalOverlay, #lightboxOverlay{
+      position: fixed; inset:0;
+      background: rgba(0,0,0,0.45);
+      display:none;
+    }
+    #drawerOverlay{ z-index: 100; }
+    #checkoutOverlay{ z-index: 120; background: rgba(0,0,0,0.55); }
+    #promoOverlay{ z-index: 140; background: rgba(0,0,0,0.55); }
+    #cookieModalOverlay{ z-index: 210; background: rgba(0,0,0,0.55); }
+    #lightboxOverlay{ z-index: 230; background: rgba(0,0,0,0.70); }
+
+    #drawerOverlay.show, #checkoutOverlay.show, #promoOverlay.show, #cookieModalOverlay.show, #lightboxOverlay.show{
+      display:block;
+    }
+
+    /* Cart drawer */
+    #cartDrawer{
+      position: fixed; top:0; right:0; height:100%;
+      width: min(92vw, 420px);
+      background:#fff;
+      border-left:1px solid var(--line);
+      z-index: 110;
+      transform: translateX(110%);
+      transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -30px 0 120px rgba(10,10,10,0.22);
+      display:flex; flex-direction:column;
+    }
+    #cartDrawer.open{ transform: translateX(0); }
+
+    /* Modals */
+    #checkoutModal, #promoModal, #cookieModal{
+      position: fixed; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+    }
+    #checkoutModal{ z-index: 130; }
+    #promoModal{ z-index: 150; }
+    #cookieModal{ z-index: 220; }
+
+    #checkoutModal.show, #promoModal.show, #cookieModal.show{ display:flex; }
+
+    .checkoutBox, .promoBox, .cookieModalBox{
+      width: min(980px, 96vw);
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 40px 160px rgba(10,10,10,0.35);
+      overflow:hidden;
+    }
+    .promoBox{ width: min(900px, 96vw); }
+    .cookieModalBox{ width: min(820px, 96vw); }
+
+    /* Mobile menu */
+    #menu{ z-index: 90; }
+
+    /* Sticky CTA mobile */
+    #stickyCta{
+      position: fixed;
+      left: 12px; right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      z-index: 80;
+      display:none;
+    }
+    @media (max-width: 640px){ #stickyCta{ display:block; } }
+
+    /* Chat */
+    #chatFab, #chatPanel{ z-index: 190; }
+    #cookieBanner{ z-index: 200; }
+
+    #chatFab{
+      position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom));
+      width: 56px; height: 56px; border-radius: 999px;
+      background:#0A0A0A; color:#fff;
+      border:1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 22px 90px rgba(10,10,10,0.25);
+      display:grid; place-items:center;
+    }
+    #chatPanel{
+      position: fixed; right: 18px; bottom: calc(86px + env(safe-area-inset-bottom));
+      width: min(92vw, 390px);
+      display:none;
+    }
+    #chatPanel.show{ display:block; }
+
+    .chatBox{
+      background:#fff; border:1px solid var(--line);
+      border-radius: 18px; box-shadow: 0 30px 120px rgba(10,10,10,0.18);
+      overflow:hidden;
+    }
+    .chatMessages{ height: 320px; overflow:auto; padding: 14px; background: #fff; }
+    .chatMsg{
+      max-width: 86%;
+      padding: 10px 12px; border-radius: 14px;
+      border:1px solid var(--line);
+      font-size: 13px; font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
+    .chatMsg.bot{ background: #F8FAFC; }
+    .chatMsg.user{ background: #0A0A0A; color:#fff; border-color: rgba(10,10,10,0.18); margin-left:auto; }
+    .chipRow{ display:flex; flex-wrap:wrap; gap:8px; padding: 10px 14px 14px; border-top: 1px solid var(--line); background: #fff; }
+    .chip{
+      font-size: 11px; font-weight: 900; letter-spacing: .08em;
+      text-transform: uppercase;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 10px;
+      background: #fff;
+    }
+    .chip:hover{ background: var(--fog); }
+
+    /* Cookies */
+    #cookieBanner{
+      position: fixed; left: 14px; right: 14px;
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      display:none;
+    }
+    .cookieBox{
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 30px 120px rgba(10,10,10,0.18);
+      overflow:hidden;
+    }
+
+    /* FAQ */
+    .faqItem{ border:1px solid var(--line); border-radius: 16px; overflow:hidden; background:#fff; }
+    .faqBtn{ width:100%; text-align:left; padding: 16px 16px; display:flex; gap:12px; align-items:flex-start; }
+    .faqBtn:focus{ outline:none; box-shadow:0 0 0 4px rgba(0,209,255,0.22); }
+    .faqA{ display:none; padding: 0 16px 16px 16px; }
+    .faqItem.open .faqA{ display:block; }
+    .faqChevron{ transition: transform 200ms ease; }
+    .faqItem.open .faqChevron{ transform: rotate(180deg); }
+
+    /* Lightbox */
+    #lightboxOverlay.show{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+    }
+    #lightboxImg{
+      width: min(1100px, 96vw);
+      max-height: 86vh;
+      object-fit: contain;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 40px 160px rgba(0,0,0,0.55);
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* Scroll lock */
+    html.overflow-hidden, body.overflow-hidden{ overflow:hidden; }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+      <div class="h-full flex items-center justify-between text-[12px] font-black uppercase tracking-widest">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-bolt text-iris"></i>
+          <span>-10% aujourd’hui avec <span class="text-iris">IRIS10</span></span>
+        </div>
+        <div class="hidden sm:flex items-center gap-3 text-white/80 font-semibold normal-case tracking-normal">
+          <span><i class="fa-solid fa-truck text-iris mr-1"></i> Livraison offerte dès 199€</span>
+          <span class="opacity-50">•</span>
+          <span><i class="fa-solid fa-rotate-left text-iris mr-1"></i> Retours 30 jours</span>
+          <span class="opacity-50">•</span>
+          <span><i class="fa-solid fa-shield-halved text-iris mr-1"></i> Paiement sécurisé</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="glass">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+      <div class="h-full flex items-center justify-between gap-3">
+        <a href="#top" class="flex items-center min-w-[160px]">
+          <img src="images/logo.png" alt="Logo IRIS" class="h-10 sm:h-11 object-contain">
+        </a>
+
+        <nav class="hidden lg:flex items-center gap-7 text-xs font-black uppercase tracking-widest text-slate-600">
+          <a href="#produits" class="hover:text-ink transition">Boutique</a>
+          <a href="#preuve" class="hover:text-ink transition">Avant/Après</a>
+          <a href="#avis" class="hover:text-ink transition">Avis</a>
+          <a href="#lifestyle" class="hover:text-ink transition">Lifestyle</a>
+          <a href="#faq" class="hover:text-ink transition">FAQ</a>
+          <a href="#apropos" class="hover:text-ink transition">À propos</a>
+          <a href="#newsletter" class="hover:text-ink transition">Newsletter</a>
+          <a href="#support" class="hover:text-ink transition">Support</a>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <button id="openCartBtn" class="btn hidden sm:flex items-center gap-2 px-4 py-3 rounded-xl border hairline bg-white shadow-soft text-xs font-black uppercase tracking-widest hover:shadow-card transition focus-ring">
+            <i class="fa-solid fa-bag-shopping text-ink"></i>
+            <span>Panier</span>
+            <span id="cartCount" class="ml-1 inline-flex items-center justify-center min-w-[22px] h-[22px] px-2 rounded-full bg-ink text-white text-[10px]">0</span>
+          </button>
+
+          <button id="openPromoNow" class="btn hidden sm:inline-flex bg-white px-4 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+            <span class="relative z-10 flex items-center gap-2"><i class="fa-solid fa-bolt text-iris"></i> Promo</span>
+          </button>
+
+          <a href="#produits" class="btn bg-ink text-white px-5 sm:px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+            <span class="relative z-10 flex items-center gap-2">Acheter <i class="fa-solid fa-arrow-right text-iris"></i></span>
+          </a>
+
+          <button id="openMenu" class="lg:hidden w-11 h-11 rounded-xl border hairline bg-white shadow-soft grid place-items-center focus-ring" aria-label="Menu">
+            <i class="fa-solid fa-bars text-ink"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MOBILE MENU -->
+  <div id="menu" class="fixed inset-0 hidden">
+    <div id="menuBg" class="absolute inset-0 bg-black/50"></div>
+    <div class="absolute top-0 right-0 h-full w-[86vw] max-w-[420px] bg-white border-l hairline p-6">
+      <div class="flex items-center justify-between">
+        <div class="text-xl font-black italic">IRIS<span class="text-iris">.</span>SYSTEM</div>
+        <button id="closeMenu" class="w-10 h-10 rounded-xl border hairline grid place-items-center" aria-label="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="mt-6 grid gap-2 text-sm font-extrabold uppercase tracking-widest">
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#produits">Boutique</a>
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#preuve">Avant/Après</a>
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#avis">Avis</a>
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#lifestyle">Lifestyle</a>
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#faq">FAQ</a>
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#apropos">À propos</a>
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#newsletter">Newsletter</a>
+        <a class="px-3 py-3 rounded-xl hover:bg-fog border border-transparent hover:border-line" href="#support">Support</a>
+      </div>
+      <div class="mt-6 grid gap-3">
+        <button id="openCartBtnMobile" class="btn w-full bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+          <span class="relative z-10 flex items-center justify-center gap-2">Panier <span id="cartCount2" class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-2 rounded-full bg-ink text-white text-[10px]">0</span></span>
+        </button>
+        <button id="openPromoNowMobile" class="btn w-full bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+          <span class="relative z-10 flex items-center justify-center gap-2">Activer promo <i class="fa-solid fa-bolt text-iris"></i></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAYS -->
+  <div id="drawerOverlay"></div>
+  <div id="checkoutOverlay"></div>
+  <div id="promoOverlay"></div>
+  <div id="cookieModalOverlay"></div>
+  <div id="lightboxOverlay" aria-hidden="true">
+    <img id="lightboxImg" alt="Aperçu">
+  </div>
+
+  <!-- DRAWER PANIER -->
+  <aside id="cartDrawer" aria-label="Panier">
+    <div class="p-4 border-b hairline flex items-center justify-between">
+      <div>
+        <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Panier</div>
+        <div class="text-lg font-black uppercase italic text-ink leading-none">Votre commande</div>
+      </div>
+      <button id="closeCartBtn" class="w-10 h-10 rounded-xl border hairline grid place-items-center" aria-label="Fermer">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="p-4 flex-1 overflow-auto">
+      <div id="cartItems" class="grid gap-3"></div>
+
+      <div class="mt-4 rounded-2xl border hairline bg-mist p-4">
+        <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Code promo</div>
+        <div class="mt-2 flex gap-2">
+          <input id="promoInput" class="flex-1 px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="IRIS10" autocomplete="off">
+          <button id="applyPromo" class="btn bg-ink text-white px-4 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+            <span class="relative z-10">OK</span>
+          </button>
+        </div>
+        <div id="promoHint" class="mt-2 text-[12px] font-semibold text-slate-600"></div>
+      </div>
+
+      <div class="mt-4 border-t hairline pt-4 grid gap-2">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-black uppercase tracking-widest text-slate-600">Sous-total</div>
+          <div class="text-sm font-black text-ink" id="subtotal">0,00 €</div>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-black uppercase tracking-widest text-slate-600">Remise</div>
+          <div class="text-sm font-black text-ink" id="discount">0,00 €</div>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-black uppercase tracking-widest text-slate-600">Livraison</div>
+          <div class="text-sm font-black text-ink" id="shipping">0,00 €</div>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+          <div class="text-xs font-black uppercase tracking-widest text-slate-600">Total</div>
+          <div class="text-2xl font-black text-ink" id="total">0,00 €</div>
+        </div>
+      </div>
+
+      <div class="mt-4 rounded-2xl p-4 border hairline bg-white">
+        <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Réassurance</div>
+        <div class="mt-3 grid grid-cols-1 gap-2 text-sm font-semibold text-slate-600">
+          <div class="flex items-center gap-2"><i class="fa-solid fa-shield text-iris"></i> Garantie 2 ans</div>
+          <div class="flex items-center gap-2"><i class="fa-solid fa-rotate-left text-iris"></i> Retours 30 jours</div>
+          <div class="flex items-center gap-2"><i class="fa-solid fa-lock text-iris"></i> Paiement sécurisé</div>
+          <div class="flex items-center gap-2"><i class="fa-solid fa-truck text-iris"></i> Livraison offerte dès 199€</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 border-t hairline grid gap-3">
+      <button id="clearCart" class="btn bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline text-slate-700">
+        <span class="relative z-10">Vider le panier</span>
+      </button>
+      <button id="goCheckout" class="btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+        <span class="relative z-10 flex items-center justify-center gap-2">Valider mon panier <i class="fa-solid fa-arrow-right text-iris"></i></span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- CHECKOUT -->
+  <div id="checkoutModal" aria-hidden="true">
+    <div class="checkoutBox">
+      <div class="p-5 border-b hairline flex items-center justify-between">
+        <div>
+          <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Commande</div>
+          <div class="text-xl font-black uppercase italic text-ink leading-none">Finaliser</div>
+        </div>
+        <button id="closeCheckout" class="w-10 h-10 rounded-xl border hairline grid place-items-center" aria-label="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7">
+          <div class="card rounded-2xl p-6">
+            <div class="text-xs font-black uppercase tracking-widest text-slate-600">Informations</div>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input class="px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Prénom">
+              <input class="px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Nom">
+              <input class="sm:col-span-2 px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Email">
+              <input class="sm:col-span-2 px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Téléphone">
+            </div>
+
+            <div class="mt-6 text-xs font-black uppercase tracking-widest text-slate-600">Livraison</div>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input class="sm:col-span-2 px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Adresse">
+              <input class="px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Ville">
+              <input class="px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Code postal">
+              <input class="sm:col-span-2 px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Pays" value="France">
+            </div>
+
+            <div class="mt-6 text-xs font-black uppercase tracking-widest text-slate-600">Paiement</div>
+            <div class="mt-4 grid gap-3">
+              <label class="flex items-center gap-3 p-4 rounded-2xl border hairline bg-mist cursor-pointer">
+                <input type="radio" name="pay" checked>
+                <div class="font-black uppercase tracking-widest text-xs">Carte bancaire</div>
+                <div class="ml-auto text-xs font-semibold text-slate-600">Visa / MasterCard</div>
+              </label>
+              <label class="flex items-center gap-3 p-4 rounded-2xl border hairline bg-white cursor-pointer">
+                <input type="radio" name="pay">
+                <div class="font-black uppercase tracking-widest text-xs">PayPal</div>
+                <div class="ml-auto text-xs font-semibold text-slate-600">Compte PayPal</div>
+              </label>
+            </div>
+
+            <div class="mt-6 flex gap-3">
+              <button id="placeOrder" class="btn flex-1 bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+                <span class="relative z-10 flex items-center justify-center gap-2">Confirmer <i class="fa-solid fa-lock text-iris"></i></span>
+              </button>
+              <button id="backToCart" class="btn bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+                <span class="relative z-10">Retour</span>
+              </button>
+            </div>
+
+            <div id="orderStatus" class="mt-4 text-sm font-semibold text-slate-600"></div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5">
+          <div class="card rounded-2xl p-6 sticky top-[calc(var(--safe-top))]">
+            <div class="text-xs font-black uppercase tracking-widest text-slate-600">Résumé</div>
+            <div id="checkoutItems" class="mt-4 grid gap-3"></div>
+
+            <div class="mt-4 border-t hairline pt-4 grid gap-2">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Sous-total</div>
+                <div class="text-sm font-black text-ink" id="cSubtotal">0,00 €</div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Remise</div>
+                <div class="text-sm font-black text-ink" id="cDiscount">0,00 €</div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Livraison</div>
+                <div class="text-sm font-black text-ink" id="cShipping">0,00 €</div>
+              </div>
+              <div class="flex items-center justify-between mt-2">
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Total</div>
+                <div class="text-2xl font-black text-ink" id="cTotal">0,00 €</div>
+              </div>
+            </div>
+
+            <button id="applyPromoCheckout" class="btn mt-4 w-full bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+              <span class="relative z-10 flex items-center justify-center gap-2">Appliquer IRIS10 <i class="fa-solid fa-bolt text-iris"></i></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMO -->
+  <div id="promoModal" aria-hidden="true">
+    <div class="promoBox">
+      <div class="p-5 border-b hairline flex items-center justify-between">
+        <div>
+          <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Offre</div>
+          <div class="text-xl font-black uppercase italic text-ink leading-none">-10% avec IRIS10</div>
+        </div>
+        <button id="closePromo" class="w-10 h-10 rounded-xl border hairline grid place-items-center" aria-label="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div class="lg:col-span-7">
+          <div class="card rounded-2xl p-6 h-full">
+            <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+              <i class="fa-solid fa-bolt"></i> Activation immédiate
+            </div>
+            <h3 class="mt-3 text-3xl sm:text-4xl font-black uppercase italic tracking-tight">
+              Code <span class="text-iris">IRIS10</span>
+            </h3>
+            <p class="mt-4 text-slate-600 text-sm sm:text-base font-semibold leading-relaxed">
+              Active le code, ouvre ton panier, finalise.
+            </p>
+
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+              <button id="promoApplyAndOpenCart" class="btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+                <span class="relative z-10 flex items-center justify-center gap-2">Activer & ouvrir panier <i class="fa-solid fa-bag-shopping text-iris"></i></span>
+              </button>
+              <button id="promoAddPack" class="btn bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+                <span class="relative z-10 flex items-center justify-center gap-2">Ajouter le pack <i class="fa-solid fa-plus text-iris"></i></span>
+              </button>
+            </div>
+
+            <div class="mt-6 grid sm:grid-cols-3 gap-3">
+              <div class="rounded-2xl p-4 border hairline bg-mist">
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Garantie</div>
+                <div class="mt-2 font-black text-ink">2 ans</div>
+              </div>
+              <div class="rounded-2xl p-4 border hairline bg-mist">
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Retours</div>
+                <div class="mt-2 font-black text-ink">30 jours</div>
+              </div>
+              <div class="rounded-2xl p-4 border hairline bg-mist">
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Livraison</div>
+                <div class="mt-2 font-black text-ink">Offerte dès 199€</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5">
+          <div class="card rounded-2xl p-6 h-full">
+            <div class="text-xs font-black uppercase tracking-widest text-slate-600">Avis</div>
+            <div class="mt-2 text-2xl font-black uppercase italic">4,8/5</div>
+            <div class="mt-2 text-amber-500 text-sm">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+            </div>
+            <p class="mt-4 text-slate-600 text-sm font-semibold leading-relaxed">
+              “Transitions tunnel/soleil beaucoup plus propres.”
+            </p>
+            <div class="mt-4 text-sm font-semibold text-slate-500">Client • France</div>
+
+            <button id="promoCloseSecondary" class="btn mt-6 w-full bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+              <span class="relative z-10">Continuer</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COOKIE MODAL -->
+  <div id="cookieModal" aria-hidden="true">
+    <div class="cookieModalBox">
+      <div class="p-5 border-b hairline flex items-center justify-between">
+        <div>
+          <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Cookies</div>
+          <div class="text-xl font-black uppercase italic text-ink leading-none">Paramètres</div>
+        </div>
+        <button id="cookieCloseModal" class="w-10 h-10 rounded-xl border hairline grid place-items-center" aria-label="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 grid gap-4">
+        <div class="rounded-2xl border hairline p-4 bg-mist">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-black uppercase tracking-widest text-xs">Nécessaires</div>
+              <div class="mt-1 text-sm font-semibold text-slate-600">Toujours actifs.</div>
+            </div>
+            <div class="text-sm font-black text-slate-600">ON</div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border hairline p-4 bg-white">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-black uppercase tracking-widest text-xs">Analytics</div>
+              <div class="mt-1 text-sm font-semibold text-slate-600">Mesure d’usage.</div>
+            </div>
+            <label class="inline-flex items-center gap-2 font-black uppercase tracking-widest text-xs">
+              <input id="cookieAnalytics" type="checkbox" class="w-5 h-5">
+              <span>Activer</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border hairline p-4 bg-white">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="font-black uppercase tracking-widest text-xs">Marketing</div>
+              <div class="mt-1 text-sm font-semibold text-slate-600">Offres et pop-up.</div>
+            </div>
+            <label class="inline-flex items-center gap-2 font-black uppercase tracking-widest text-xs">
+              <input id="cookieMarketing" type="checkbox" class="w-5 h-5">
+              <span>Activer</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 justify-end">
+          <button id="cookieSave" class="btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+            <span class="relative z-10">Enregistrer</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main id="top" class="relative z-10">
+
+    <!-- HERO -->
+    <section class="hero flex items-end">
+      <video autoplay muted playsinline preload="auto" loop>
+        <source src="video/video.mp4" type="video/mp4" />
+      </video>
+      <div class="heroOverlay"></div>
+
+      <div class="relative z-10 w-full">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 sm:pb-20">
+          <div class="max-w-4xl">
+            <div class="inline-flex items-center gap-3 bg-white/95 px-5 py-2.5 rounded-2xl border hairline shadow-soft mb-7">
+              <div class="w-2 h-2 rounded-full bg-iris animate-pulse"></div>
+              <span class="text-xs font-black uppercase tracking-widest text-ink">Sécurité visuelle active</span>
+              <span class="text-[10px] font-black uppercase tracking-widest text-slate-600 border-l hairline pl-3">0,08 s</span>
+            </div>
+
+            <h1 class="text-5xl sm:text-[5.2rem] font-black tracking-tighter leading-[0.9] glowText text-white mb-6 uppercase italic">
+              Voyez clair.<br><span class="text-iris">Instantanément</span>.
+            </h1>
+
+            <p class="text-white/90 text-xl sm:text-2xl font-semibold leading-relaxed max-w-2xl border-l-4 border-iris pl-6 mb-7">
+              Tunnel, soleil rasant, reflets : IRIS stabilise la transition pour garder la route lisible.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mb-8">
+              <div class="bg-white/90 border hairline rounded-full px-4 py-2 text-[12px] font-black uppercase tracking-widest text-ink">
+                <i class="fa-solid fa-star text-amber-500 mr-2"></i> 4,8/5
+              </div>
+              <div class="bg-white/90 border hairline rounded-full px-4 py-2 text-[12px] font-black uppercase tracking-widest text-ink">
+                <i class="fa-solid fa-lock text-iris mr-2"></i> Paiement sécurisé
+              </div>
+              <div class="bg-white/90 border hairline rounded-full px-4 py-2 text-[12px] font-black uppercase tracking-widest text-ink">
+                <i class="fa-solid fa-truck text-iris mr-2"></i> Livraison offerte dès 199€
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-col sm:flex-row gap-4">
+              <a href="#produits" class="btn bg-white text-ink px-8 py-5 rounded-xl font-black uppercase tracking-widest text-sm shadow-soft focus-ring border hairline">
+                <span class="relative z-10 flex items-center justify-center gap-3">Voir la boutique <i class="fa-solid fa-bag-shopping"></i></span>
+              </a>
+              <button class="btn bg-ink text-white px-8 py-5 rounded-xl font-black uppercase tracking-widest text-sm shadow-card focus-ring" data-add="pack">
+                <span class="relative z-10 flex items-center justify-center gap-3">Ajouter le pack <i class="fa-solid fa-plus text-iris"></i></span>
+              </button>
+              <button id="heroPromo" class="btn bg-white px-8 py-5 rounded-xl font-black uppercase tracking-widest text-sm focus-ring border hairline">
+                <span class="relative z-10 flex items-center justify-center gap-3">Activer -10% <i class="fa-solid fa-bolt text-iris"></i></span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOUTIQUE -->
+    <section id="produits" class="py-16 sm:py-24 bg-white border-y hairline">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <i class="fa-solid fa-bag-shopping"></i> Boutique
+          </div>
+          <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic text-ink leading-none">
+            Trois essentiels.
+          </h2>
+          <p class="mt-6 text-slate-600 text-lg sm:text-xl font-semibold leading-relaxed">
+            Pack IRIS, Intercom, Visière : la base, propre et efficace.
+          </p>
+        </div>
+
+        <div class="mt-10 rounded-2xl border hairline bg-mist p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-white border hairline grid place-items-center">
+              <i class="fa-solid fa-fire text-iris"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Stock</div>
+              <div class="text-sm font-semibold text-slate-700">
+                Pack fondateur : <span class="font-black text-ink" id="stockHint">reste 14</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn bg-ink text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" data-add="pack">
+            <span class="relative z-10 flex items-center justify-center gap-2">Prendre le pack <i class="fa-solid fa-arrow-right text-iris"></i></span>
+          </button>
+        </div>
+
+        <div id="productGrid" class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+        <div class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 card rounded-2xl p-7">
+            <div class="text-xs font-black uppercase tracking-widest text-slate-600">Pourquoi ça marche</div>
+            <div class="mt-2 text-2xl font-black uppercase italic">Moins de surprise, plus de contrôle.</div>
+            <div class="mt-4 grid sm:grid-cols-3 gap-3 text-sm font-semibold text-slate-600">
+              <div class="rounded-2xl border hairline bg-mist p-4"><i class="fa-solid fa-bolt text-iris mr-2"></i> Transition maîtrisée</div>
+              <div class="rounded-2xl border hairline bg-mist p-4"><i class="fa-solid fa-eye text-iris mr-2"></i> Repères lisibles</div>
+              <div class="rounded-2xl border hairline bg-mist p-4"><i class="fa-solid fa-helmet-safety text-iris mr-2"></i> Montage propre</div>
+            </div>
+          </div>
+          <div class="lg:col-span-5 card rounded-2xl p-7">
+            <div class="text-xs font-black uppercase tracking-widest text-slate-600">Offre</div>
+            <div class="mt-2 text-2xl font-black uppercase italic">-10% aujourd’hui</div>
+            <p class="mt-3 text-slate-600 text-sm font-semibold">Code : <span class="text-ink font-black">IRIS10</span></p>
+            <button id="openPromoFromShop" class="btn mt-5 w-full bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+              <span class="relative z-10 flex items-center justify-center gap-2">Activer la promo <i class="fa-solid fa-bolt text-iris"></i></span>
+            </button>
+            <button id="openCartFromShop" class="btn mt-3 w-full bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+              <span class="relative z-10 flex items-center justify-center gap-2">Voir panier <i class="fa-solid fa-bag-shopping"></i></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BEFORE/AFTER -->
+    <section id="preuve" class="py-16 sm:py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2"><i class="fa-solid fa-eye"></i> Avant / Après</div>
+          <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic text-ink leading-none">
+            La différence se voit.
+          </h2>
+          <p class="mt-6 text-slate-600 text-lg sm:text-xl font-semibold leading-relaxed">
+            Glisse pour comparer.
+          </p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div class="lg:col-span-8">
+            <div class="ba-wrap" id="baWrap">
+              <img id="imgBefore" class="ba-img" alt="Avant">
+              <div id="afterMask" class="ba-after" style="width:50%;">
+                <img id="imgAfter" class="ba-img" alt="Après">
+              </div>
+              <div id="baHandle" class="ba-handle" aria-label="Comparer">
+                <i class="fa-solid fa-arrows-left-right"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4">
+            <div class="card rounded-2xl p-7">
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Action</div>
+              <div class="mt-3 text-2xl font-black uppercase italic text-ink">
+                Prêt en 1 minute.
+              </div>
+              <p class="mt-4 text-slate-600 text-sm font-semibold leading-relaxed">
+                Ajoute au panier, applique IRIS10, puis finalise.
+              </p>
+
+              <button class="btn mt-6 w-full bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" data-add="pack">
+                <span class="relative z-10 flex items-center justify-center gap-2">Ajouter le pack <i class="fa-solid fa-plus text-iris"></i></span>
+              </button>
+
+              <button id="openCartFromProof" class="btn mt-3 w-full bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+                <span class="relative z-10 flex items-center justify-center gap-2">Voir panier <i class="fa-solid fa-bag-shopping"></i></span>
+              </button>
+
+              <button id="proofPromo" class="btn mt-3 w-full bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+                <span class="relative z-10 flex items-center justify-center gap-2">Activer -10% <i class="fa-solid fa-bolt text-iris"></i></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- AVIS -->
+    <section id="avis" class="py-16 sm:py-24 bg-white border-y hairline">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <i class="fa-solid fa-star"></i> Avis clients
+          </div>
+          <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic text-ink leading-none">
+            Preuve sociale.
+          </h2>
+          <p class="mt-6 text-slate-600 text-lg sm:text-xl font-semibold leading-relaxed">
+            Retours concrets : transitions plus propres, fatigue réduite, meilleure lecture de route.
+          </p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div class="lg:col-span-4 card rounded-2xl p-7">
+            <div class="text-xs font-black uppercase tracking-widest text-slate-600">Note</div>
+            <div class="mt-3 flex items-end gap-3">
+              <div class="text-5xl font-black text-ink">4,8</div>
+              <div class="pb-2 text-sm font-semibold text-slate-600">/5</div>
+            </div>
+            <div class="mt-2 text-amber-500 text-lg">
+              <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+            </div>
+            <div class="mt-3 text-sm font-semibold text-slate-600">214 avis</div>
+
+            <div class="mt-5 grid gap-2 text-sm font-semibold text-slate-600">
+              <div class="flex items-center justify-between">
+                <span>5★</span>
+                <div class="flex-1 mx-3 h-2 rounded-full bg-fog overflow-hidden">
+                  <div class="h-full bg-ink" style="width:78%"></div>
+                </div>
+                <span>78%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>4★</span>
+                <div class="flex-1 mx-3 h-2 rounded-full bg-fog overflow-hidden">
+                  <div class="h-full bg-ink" style="width:17%"></div>
+                </div>
+                <span>17%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>3★</span>
+                <div class="flex-1 mx-3 h-2 rounded-full bg-fog overflow-hidden">
+                  <div class="h-full bg-ink" style="width:4%"></div>
+                </div>
+                <span>4%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>2★</span>
+                <div class="flex-1 mx-3 h-2 rounded-full bg-fog overflow-hidden">
+                  <div class="h-full bg-ink" style="width:1%"></div>
+                </div>
+                <span>1%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span>1★</span>
+                <div class="flex-1 mx-3 h-2 rounded-full bg-fog overflow-hidden">
+                  <div class="h-full bg-ink" style="width:0%"></div>
+                </div>
+                <span>0%</span>
+              </div>
+            </div>
+
+            <button class="btn mt-5 w-full bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" data-add="pack">
+              <span class="relative z-10 flex items-center justify-center gap-2">Ajouter le pack <i class="fa-solid fa-plus text-iris"></i></span>
+            </button>
+          </div>
+
+          <div class="lg:col-span-8 grid gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                  <div class="text-amber-500 text-sm">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                  </div>
+                  <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Quotidien</div>
+                </div>
+                <div class="mt-3 text-lg font-black uppercase italic">Tunnel → soleil : propre</div>
+                <p class="mt-2 text-slate-600 text-sm font-semibold leading-relaxed">
+                  La bascule est moins violente. Je garde les repères au moment critique.
+                </p>
+                <div class="mt-4 text-sm font-semibold text-slate-500">Nicolas • Lyon</div>
+              </div>
+
+              <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                  <div class="text-amber-500 text-sm">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                  </div>
+                  <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Long trajet</div>
+                </div>
+                <div class="mt-3 text-lg font-black uppercase italic">Moins de fatigue</div>
+                <p class="mt-2 text-slate-600 text-sm font-semibold leading-relaxed">
+                  Au coucher du soleil, je force moins sur les yeux. Très agréable.
+                </p>
+                <div class="mt-4 text-sm font-semibold text-slate-500">Sarah • Paris</div>
+              </div>
+
+              <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                  <div class="text-amber-500 text-sm">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                  </div>
+                  <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Montage</div>
+                </div>
+                <div class="mt-3 text-lg font-black uppercase italic">Installation rapide</div>
+                <p class="mt-2 text-slate-600 text-sm font-semibold leading-relaxed">
+                  Pose simple, rendu clean. Une fois en place, j’y pense plus.
+                </p>
+                <div class="mt-4 text-sm font-semibold text-slate-500">Mehdi • Grenoble</div>
+              </div>
+
+              <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between">
+                  <div class="text-amber-500 text-sm">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                  </div>
+                  <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Support</div>
+                </div>
+                <div class="mt-3 text-lg font-black uppercase italic">Réponse rapide</div>
+                <p class="mt-2 text-slate-600 text-sm font-semibold leading-relaxed">
+                  Compatibilité confirmée vite, conseils clairs.
+                </p>
+                <div class="mt-4 text-sm font-semibold text-slate-500">Thomas • Lille</div>
+              </div>
+            </div>
+
+            <div class="card rounded-2xl p-7">
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Action</div>
+              <div class="mt-2 text-2xl font-black uppercase italic">Prêt à passer à l’achat ?</div>
+              <div class="mt-5 flex flex-col sm:flex-row gap-3">
+                <button class="btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" data-add="pack">
+                  <span class="relative z-10 flex items-center justify-center gap-2">Ajouter le pack <i class="fa-solid fa-plus text-iris"></i></span>
+                </button>
+                <button class="btn bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline" id="openCartFromAvis">
+                  <span class="relative z-10 flex items-center justify-center gap-2">Voir panier <i class="fa-solid fa-bag-shopping"></i></span>
+                </button>
+                <button class="btn bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline" id="avisPromo">
+                  <span class="relative z-10 flex items-center justify-center gap-2">Activer -10% <i class="fa-solid fa-bolt text-iris"></i></span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIFESTYLE -->
+    <section id="lifestyle" class="py-16 sm:py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <i class="fa-solid fa-camera"></i> Lifestyle
+          </div>
+          <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic text-ink leading-none">
+            Dans la vraie vie.
+          </h2>
+          <p class="mt-6 text-slate-600 text-lg sm:text-xl font-semibold leading-relaxed">
+            IRIS, c’est pensé pour les transitions : tunnel, contre-jour, pluie fine, ville de nuit.
+          </p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div class="lg:col-span-5">
+            <div class="card rounded-2xl p-7">
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Scénarios</div>
+
+              <div class="mt-5 grid gap-3 text-sm font-semibold text-slate-600">
+                <div class="rounded-2xl border hairline bg-mist p-4 flex gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-white border hairline grid place-items-center">
+                    <i class="fa-solid fa-road text-iris"></i>
+                  </div>
+                  <div>
+                    <div class="font-black uppercase tracking-widest text-xs text-ink">Ville de nuit</div>
+                    <div class="mt-1">Panneaux + phares : lecture plus stable.</div>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border hairline bg-mist p-4 flex gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-white border hairline grid place-items-center">
+                    <i class="fa-solid fa-archway text-iris"></i>
+                  </div>
+                  <div>
+                    <div class="font-black uppercase tracking-widest text-xs text-ink">Tunnel → plein soleil</div>
+                    <div class="mt-1">Transition plus propre au moment critique.</div>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border hairline bg-mist p-4 flex gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-white border hairline grid place-items-center">
+                    <i class="fa-solid fa-cloud-rain text-iris"></i>
+                  </div>
+                  <div>
+                    <div class="font-black uppercase tracking-widest text-xs text-ink">Pluie fine</div>
+                    <div class="mt-1">Moins de reflets parasites sur l’écran.</div>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border hairline bg-mist p-4 flex gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-white border hairline grid place-items-center">
+                    <i class="fa-solid fa-sun text-iris"></i>
+                  </div>
+                  <div>
+                    <div class="font-black uppercase tracking-widest text-xs text-ink">Soleil rasant</div>
+                    <div class="mt-1">Repères route plus lisibles, moins de fatigue.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                <button class="btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" data-add="pack">
+                  <span class="relative z-10 flex items-center justify-center gap-2">Ajouter le pack <i class="fa-solid fa-plus text-iris"></i></span>
+                </button>
+                <button class="btn bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline" id="openCartFromLifestyle">
+                  <span class="relative z-10 flex items-center justify-center gap-2">Voir panier <i class="fa-solid fa-bag-shopping"></i></span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <button class="card rounded-2xl overflow-hidden text-left group" data-lightbox="images/lifestyle-1.jpg" type="button">
+                <img src="images/lifestyle-1.jpg" alt="Lifestyle 1" class="w-full h-[240px] object-cover bg-fog group-hover:scale-[1.02] transition">
+                <div class="p-5">
+                  <div class="text-xs font-black uppercase tracking-widest text-slate-600">Urbain</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Ville • Nuit</div>
+                </div>
+              </button>
+
+              <button class="card rounded-2xl overflow-hidden text-left group" data-lightbox="images/lifestyle-2.jpg" type="button">
+                <img src="images/lifestyle-2.jpg" alt="Lifestyle 2" class="w-full h-[240px] object-cover bg-fog group-hover:scale-[1.02] transition">
+                <div class="p-5">
+                  <div class="text-xs font-black uppercase tracking-widest text-slate-600">Transition</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Tunnel → Soleil</div>
+                </div>
+              </button>
+
+              <button class="card rounded-2xl overflow-hidden text-left group" data-lightbox="images/lifestyle-3.jpg" type="button">
+                <img src="images/lifestyle-3.jpg" alt="Lifestyle 3" class="w-full h-[240px] object-cover bg-fog group-hover:scale-[1.02] transition">
+                <div class="p-5">
+                  <div class="text-xs font-black uppercase tracking-widest text-slate-600">Route</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Soleil rasant</div>
+                </div>
+              </button>
+
+              <button class="card rounded-2xl overflow-hidden text-left group" data-lightbox="images/lifestyle-4.jpg" type="button">
+                <img src="images/lifestyle-4.jpg" alt="Lifestyle 4" class="w-full h-[240px] object-cover bg-fog group-hover:scale-[1.02] transition">
+                <div class="p-5">
+                  <div class="text-xs font-black uppercase tracking-widest text-slate-600">Météo</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Pluie fine</div>
+                </div>
+              </button>
+            </div>
+
+            <div class="mt-6 rounded-2xl border hairline bg-white p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="text-xs font-black uppercase tracking-widest text-slate-600">Tip</div>
+                <div class="mt-1 text-sm font-semibold text-slate-600">
+                  Clique une photo pour l’ouvrir en plein écran.
+                </div>
+              </div>
+              <button id="lifestylePromo" class="btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+                <span class="relative z-10 flex items-center justify-center gap-2">Activer -10% <i class="fa-solid fa-bolt text-iris"></i></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-16 sm:py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <i class="fa-solid fa-circle-question"></i> FAQ
+          </div>
+          <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic text-ink leading-none">
+            Réponses directes.
+          </h2>
+          <p class="mt-6 text-slate-600 text-lg sm:text-xl font-semibold leading-relaxed">
+            Compatibilité, montage, livraison, retours, promo.
+          </p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div class="lg:col-span-4">
+            <div class="card rounded-2xl p-7 sticky top-[calc(var(--safe-top))]">
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Recherche</div>
+              <input id="faqSearch" class="mt-3 w-full px-4 py-4 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Ex: Pinlock, retours, livraison…" autocomplete="off">
+              <div class="mt-4 grid gap-2 text-sm font-semibold">
+                <button class="px-4 py-3 rounded-xl border hairline bg-white hover:bg-fog text-left" data-filter="">Tout</button>
+                <button class="px-4 py-3 rounded-xl border hairline bg-white hover:bg-fog text-left" data-filter="compat">Compatibilité</button>
+                <button class="px-4 py-3 rounded-xl border hairline bg-white hover:bg-fog text-left" data-filter="montage">Montage</button>
+                <button class="px-4 py-3 rounded-xl border hairline bg-white hover:bg-fog text-left" data-filter="livraison">Livraison</button>
+                <button class="px-4 py-3 rounded-xl border hairline bg-white hover:bg-fog text-left" data-filter="retours">Retours</button>
+                <button class="px-4 py-3 rounded-xl border hairline bg-white hover:bg-fog text-left" data-filter="paiement">Paiement</button>
+                <button class="px-4 py-3 rounded-xl border hairline bg-white hover:bg-fog text-left" data-filter="promo">Promo</button>
+              </div>
+              <button id="faqReset" class="btn mt-5 w-full bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+                <span class="relative z-10">Réinitialiser</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-8 grid gap-3" id="faqList">
+            <div class="faqItem" data-tags="compat">
+              <button class="faqBtn" type="button">
+                <div class="w-9 h-9 rounded-xl bg-mist border hairline grid place-items-center"><i class="fa-solid fa-helmet-safety text-iris"></i></div>
+                <div class="flex-1">
+                  <div class="font-black uppercase tracking-widest text-xs text-slate-600">Compatibilité</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Compatible avec mon casque ?</div>
+                </div>
+                <i class="fa-solid fa-chevron-down faqChevron text-slate-400 mt-1"></i>
+              </button>
+              <div class="faqA text-slate-600 text-sm font-semibold leading-relaxed">
+                Oui si le montage correspond à ton écran. Dans le chat, envoie modèle exact + type d’écran (Pinlock ou non) et on te répond.
+              </div>
+            </div>
+
+            <div class="faqItem" data-tags="compat">
+              <button class="faqBtn" type="button">
+                <div class="w-9 h-9 rounded-xl bg-mist border hairline grid place-items-center"><i class="fa-solid fa-layer-group text-iris"></i></div>
+                <div class="flex-1">
+                  <div class="font-black uppercase tracking-widest text-xs text-slate-600">Compatibilité</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Pinlock : ça passe ?</div>
+                </div>
+                <i class="fa-solid fa-chevron-down faqChevron text-slate-400 mt-1"></i>
+              </button>
+              <div class="faqA text-slate-600 text-sm font-semibold leading-relaxed">
+                Selon ton écran et l’espace disponible. Donne le modèle exact dans le chat : réponse immédiate.
+              </div>
+            </div>
+
+            <div class="faqItem" data-tags="montage">
+              <button class="faqBtn" type="button">
+                <div class="w-9 h-9 rounded-xl bg-mist border hairline grid place-items-center"><i class="fa-solid fa-wrench text-iris"></i></div>
+                <div class="flex-1">
+                  <div class="font-black uppercase tracking-widest text-xs text-slate-600">Montage</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Combien de temps pour installer ?</div>
+                </div>
+                <i class="fa-solid fa-chevron-down faqChevron text-slate-400 mt-1"></i>
+              </button>
+              <div class="faqA text-slate-600 text-sm font-semibold leading-relaxed">
+                En général : 2 à 5 minutes. Une fois en place, utilisation automatique.
+              </div>
+            </div>
+
+            <div class="faqItem" data-tags="livraison">
+              <button class="faqBtn" type="button">
+                <div class="w-9 h-9 rounded-xl bg-mist border hairline grid place-items-center"><i class="fa-solid fa-truck text-iris"></i></div>
+                <div class="flex-1">
+                  <div class="font-black uppercase tracking-widest text-xs text-slate-600">Livraison</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Livraison offerte ?</div>
+                </div>
+                <i class="fa-solid fa-chevron-down faqChevron text-slate-400 mt-1"></i>
+              </button>
+              <div class="faqA text-slate-600 text-sm font-semibold leading-relaxed">
+                Offerte dès 199€. Sinon : 9,90€.
+              </div>
+            </div>
+
+            <div class="faqItem" data-tags="retours">
+              <button class="faqBtn" type="button">
+                <div class="w-9 h-9 rounded-xl bg-mist border hairline grid place-items-center"><i class="fa-solid fa-rotate-left text-iris"></i></div>
+                <div class="flex-1">
+                  <div class="font-black uppercase tracking-widest text-xs text-slate-600">Retours</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Je peux retourner ?</div>
+                </div>
+                <i class="fa-solid fa-chevron-down faqChevron text-slate-400 mt-1"></i>
+              </button>
+              <div class="faqA text-slate-600 text-sm font-semibold leading-relaxed">
+                Oui, 30 jours. Tu renvoies si ça ne correspond pas à ton usage.
+              </div>
+            </div>
+
+            <div class="faqItem" data-tags="paiement">
+              <button class="faqBtn" type="button">
+                <div class="w-9 h-9 rounded-xl bg-mist border hairline grid place-items-center"><i class="fa-solid fa-lock text-iris"></i></div>
+                <div class="flex-1">
+                  <div class="font-black uppercase tracking-widest text-xs text-slate-600">Paiement</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Paiement sécurisé ?</div>
+                </div>
+                <i class="fa-solid fa-chevron-down faqChevron text-slate-400 mt-1"></i>
+              </button>
+              <div class="faqA text-slate-600 text-sm font-semibold leading-relaxed">
+                Carte bancaire et PayPal disponibles. Paiement sécurisé.
+              </div>
+            </div>
+
+            <div class="faqItem" data-tags="promo">
+              <button class="faqBtn" type="button">
+                <div class="w-9 h-9 rounded-xl bg-mist border hairline grid place-items-center"><i class="fa-solid fa-bolt text-iris"></i></div>
+                <div class="flex-1">
+                  <div class="font-black uppercase tracking-widest text-xs text-slate-600">Promo</div>
+                  <div class="mt-1 text-lg font-black uppercase italic">Comment utiliser IRIS10 ?</div>
+                </div>
+                <i class="fa-solid fa-chevron-down faqChevron text-slate-400 mt-1"></i>
+              </button>
+              <div class="faqA text-slate-600 text-sm font-semibold leading-relaxed">
+                Ajoute au panier, saisis IRIS10, valide : remise appliquée automatiquement.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- A PROPOS -->
+    <section id="apropos" class="py-16 sm:py-24 bg-white border-y hairline">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div class="max-w-3xl">
+          <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <i class="fa-solid fa-circle-info"></i> À propos
+          </div>
+          <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic text-ink leading-none">
+            Le projet IRIS.
+          </h2>
+          <p class="mt-6 text-slate-600 text-lg sm:text-xl font-semibold leading-relaxed">
+            Une obsession : garder l’information visuelle utile quand la lumière change brutalement.
+          </p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div class="lg:col-span-7">
+            <div class="card rounded-2xl p-8 h-full">
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Promesse</div>
+              <div class="mt-2 text-2xl sm:text-3xl font-black uppercase italic text-ink leading-tight">
+                Lisibilité, stabilité, contrôle.
+              </div>
+              <p class="mt-4 text-slate-600 text-sm sm:text-base font-semibold leading-relaxed">
+                IRIS est pensé pour les transitions (tunnel, soleil rasant, reflets) et pour une utilisation naturelle.
+              </p>
+
+              <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="rounded-2xl p-6 border hairline bg-mist text-center">
+                  <div class="text-iris text-2xl"><i class="fa-solid fa-stopwatch"></i></div>
+                  <div class="mt-3 text-xs font-black uppercase tracking-widest text-ink">Réactivité</div>
+                  <div class="mt-1 text-xs font-bold text-slate-600">0,08 s</div>
+                </div>
+                <div class="rounded-2xl p-6 border hairline bg-mist text-center">
+                  <div class="text-iris text-2xl"><i class="fa-solid fa-eye"></i></div>
+                  <div class="mt-3 text-xs font-black uppercase tracking-widest text-ink">Lisibilité</div>
+                  <div class="mt-1 text-xs font-bold text-slate-600">Repères utiles</div>
+                </div>
+                <div class="rounded-2xl p-6 border hairline bg-mist text-center">
+                  <div class="text-iris text-2xl"><i class="fa-solid fa-shield"></i></div>
+                  <div class="mt-3 text-xs font-black uppercase tracking-widest text-ink">Sécurité</div>
+                  <div class="mt-1 text-xs font-bold text-slate-600">Transparent</div>
+                </div>
+              </div>
+
+              <button id="aboutPromo" class="btn mt-7 w-full bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+                <span class="relative z-10 flex items-center justify-center gap-2">Activer -10% <i class="fa-solid fa-bolt text-iris"></i></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5">
+            <div class="card rounded-2xl p-8 h-full">
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Fondateur</div>
+              <div class="mt-2 text-2xl font-black uppercase italic text-ink">Omran Gloulou</div>
+              <p class="mt-2 text-sm font-semibold text-slate-600">
+                Produit • Exécution • Expérience utilisateur.
+              </p>
+              <div class="mt-6 rounded-2xl border hairline bg-fog overflow-hidden">
+                <img src="images/omran-casque.jpg" alt="Fondateur" class="w-full h-[340px] object-cover">
+              </div>
+              <div class="mt-4">
+                <a class="btn inline-flex items-center gap-2 bg-white border hairline px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring"
+                   href="https://www.linkedin.com/in/omran-gloulou-358a0822b" target="_blank" rel="noopener">
+                  <span class="relative z-10"><i class="fa-brands fa-linkedin text-iris"></i> LinkedIn</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section id="newsletter" class="py-16 sm:py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div class="lg:col-span-7">
+            <div class="max-w-2xl">
+              <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                <i class="fa-solid fa-envelope"></i> Newsletter
+              </div>
+              <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic text-ink leading-none">
+                Drops & offres.
+              </h2>
+              <p class="mt-6 text-slate-600 text-lg sm:text-xl font-semibold leading-relaxed">
+                Inscris-toi pour recevoir les nouveautés.
+              </p>
+
+              <div class="mt-8 card rounded-2xl p-6">
+                <form id="newsletterForm" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  <input id="newsletterEmail" class="sm:col-span-8 px-4 py-4 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Ton email" type="email" required>
+                  <button class="sm:col-span-4 btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" type="submit">
+                    <span class="relative z-10 flex items-center justify-center gap-2">S’inscrire <i class="fa-solid fa-arrow-right text-iris"></i></span>
+                  </button>
+                </form>
+                <div id="newsletterMsg" class="mt-3 text-sm font-semibold text-slate-600"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5">
+            <div class="card rounded-2xl p-7 h-full">
+              <div class="text-xs font-black uppercase tracking-widest text-slate-600">Code</div>
+              <div class="mt-2 text-2xl font-black uppercase italic text-ink">IRIS10</div>
+              <p class="mt-3 text-slate-600 text-sm font-semibold leading-relaxed">
+                Active le code et finalise dans le panier.
+              </p>
+              <button id="newsletterPromo" class="btn mt-6 w-full bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+                <span class="relative z-10 flex items-center justify-center gap-2">Activer -10% <i class="fa-solid fa-bolt text-iris"></i></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUPPORT -->
+    <section id="support" class="py-16 sm:py-24 bg-ink text-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl">
+          <div class="text-iris font-black uppercase tracking-widest text-sm flex items-center gap-2">
+            <i class="fa-solid fa-headset"></i> Support
+          </div>
+          <h2 class="mt-4 text-4xl sm:text-6xl font-black tracking-tight uppercase italic leading-none">
+            On répond vite.
+          </h2>
+          <p class="mt-6 text-white/80 text-lg sm:text-xl font-semibold leading-relaxed">
+            Compatibilité, montage, commande : utilise le chat.
+          </p>
+
+          <div class="mt-10 grid sm:grid-cols-12 gap-3 items-center">
+            <div class="sm:col-span-7 text-white/60 text-sm font-semibold">
+              © IRIS.SYSTEM — Tous droits réservés
+            </div>
+            <div class="sm:col-span-5 flex justify-start sm:justify-end gap-3">
+              <button id="manageCookies" class="btn bg-white/10 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border border-white/10">
+                <span class="relative z-10">Cookies</span>
+              </button>
+              <button id="supportPromo" class="btn bg-white text-ink px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+                <span class="relative z-10 flex items-center gap-2">-10% <i class="fa-solid fa-bolt text-iris"></i></span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Sticky CTA mobile -->
+  <div id="stickyCta">
+    <div class="card rounded-2xl p-3 flex items-center gap-3">
+      <button class="btn flex-1 bg-ink text-white px-5 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" data-add="pack">
+        <span class="relative z-10 flex items-center justify-center gap-2">Ajouter le pack <i class="fa-solid fa-plus text-iris"></i></span>
+      </button>
+      <button id="openCartSticky" class="btn bg-white px-5 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+        <span class="relative z-10"><i class="fa-solid fa-bag-shopping"></i></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CHATBOT -->
+  <button id="chatFab" title="Chat IRIS">
+    <i class="fa-solid fa-message"></i>
+  </button>
+
+  <div id="chatPanel" aria-hidden="true">
+    <div class="chatBox">
+      <div class="p-4 border-b hairline flex items-center justify-between">
+        <div class="min-w-0">
+          <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">IRIS</div>
+          <div class="text-base font-black text-ink leading-none">Support</div>
+        </div>
+        <button id="chatClose" class="w-10 h-10 rounded-xl border hairline grid place-items-center" aria-label="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="chatMessages" class="chatMessages"></div>
+
+      <div class="chipRow">
+        <button class="chip" data-chip="prix">Prix</button>
+        <button class="chip" data-chip="compat">Compatibilité</button>
+        <button class="chip" data-chip="montage">Montage</button>
+        <button class="chip" data-chip="livraison">Livraison</button>
+        <button class="chip" data-chip="retours">Retours</button>
+        <button class="chip" data-chip="promo">Promo</button>
+      </div>
+
+      <div class="p-3 border-t hairline bg-white">
+        <form id="chatForm" class="flex gap-2">
+          <input id="chatInput" class="flex-1 px-3 py-3 rounded-xl border hairline text-sm font-semibold focus-ring" placeholder="Écris ici…" autocomplete="off"/>
+          <button class="btn bg-ink text-white px-4 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" type="submit">
+            <span class="relative z-10"><i class="fa-solid fa-paper-plane text-iris"></i></span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- COOKIE BANNER -->
+  <div id="cookieBanner">
+    <div class="cookieBox">
+      <div class="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+        <div class="min-w-0">
+          <div class="text-[11px] font-black uppercase tracking-widest text-slate-600">Cookies</div>
+          <div class="text-base sm:text-lg font-black text-ink leading-tight">
+            Préférences cookies
+          </div>
+          <div class="mt-1 text-sm font-semibold text-slate-600">
+            Accepter, refuser ou personnaliser.
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <button id="cookieReject" class="btn bg-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+            <span class="relative z-10">Refuser</span>
+          </button>
+          <button id="cookieCustomize" class="btn bg-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline">
+            <span class="relative z-10">Personnaliser</span>
+          </button>
+          <button id="cookieAccept" class="btn bg-ink text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-xs focus-ring">
+            <span class="relative z-10">Accepter</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Assets (mets les fichiers dans ces chemins)
+    const ASSETS = {
+      before: "images/avant.jpg",
+      after:  "images/apres.jpg"
+    };
+
+    // 3 produits
+    const PRODUCTS = [
+      { id: "pack",     name: "Pack Fondateur IRIS", price: 199, badge: "Recommandé", img: "images/produit.jpg",  desc: "Le kit complet IRIS. Montage propre, utilisation naturelle." },
+      { id: "intercom", name: "Intercom IRIS",       price: 129, badge: "Nouveau",     img: "images/intercom.jpg", desc: "Audio clair et commandes simples, pensé pour la route." },
+      { id: "visiere",  name: "Visière IRIS",        price: 59,  badge: "Accessoire",  img: "images/visiere.jpg",  desc: "Visière compatible IRIS pour compléter ton setup." }
+    ];
+
+    const PROMO_CODE = "IRIS10";
+    const PROMO_PCT  = 10;
+
+    function safeParse(v, fallback){
+      try { return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+    }
+    function money(v){
+      const n = Math.round(v * 100) / 100;
+      return n.toFixed(2).replace(".", ",") + " €";
+    }
+    function setText(id, value){
+      const el = document.getElementById(id);
+      if(el) el.textContent = value;
+    }
+
+    let scrollLockCount = 0;
+    function lockScroll(){
+      scrollLockCount++;
+      document.documentElement.classList.add("overflow-hidden");
+      document.body.classList.add("overflow-hidden");
+    }
+    function unlockScroll(){
+      scrollLockCount = Math.max(0, scrollLockCount - 1);
+      if(scrollLockCount === 0){
+        document.documentElement.classList.remove("overflow-hidden");
+        document.body.classList.remove("overflow-hidden");
+      }
+    }
+
+    // STATE
+    let cart  = safeParse(localStorage.getItem("iris_cart"), []);
+    let promo = safeParse(localStorage.getItem("iris_promo"), null);
+
+    function saveCart(){ localStorage.setItem("iris_cart", JSON.stringify(cart)); }
+    function savePromo(){ localStorage.setItem("iris_promo", JSON.stringify(promo)); }
+
+    function cartCount(){ return cart.reduce((s,it)=> s + it.qty, 0); }
+    function cartSubtotal(){ return cart.reduce((s,it)=> s + (it.price * it.qty), 0); }
+    function discountAmount(subtotal){ return promo ? subtotal * (promo.pct/100) : 0; }
+    function shippingAmount(subtotalAfterDiscount){
+      if(subtotalAfterDiscount <= 0) return 0;
+      return subtotalAfterDiscount >= 199 ? 0 : 9.90;
+    }
+
+    // CART ACTIONS
+    function addToCart(productId, qty=1){
+      const p = PRODUCTS.find(x => x.id === productId);
+      if(!p) return;
+      const found = cart.find(x => x.id === productId);
+      if(found) found.qty += qty;
+      else cart.push({ id: p.id, name: p.name, price: p.price, img: p.img, qty });
+      saveCart();
+      syncCartUI();
+    }
+    function removeFromCart(productId){
+      cart = cart.filter(x => x.id !== productId);
+      saveCart();
+      syncCartUI();
+    }
+    function setQty(productId, qty){
+      const it = cart.find(x => x.id === productId);
+      if(!it) return;
+      it.qty = Math.max(1, qty);
+      saveCart();
+      syncCartUI();
+    }
+    function clearCart(){
+      cart = [];
+      saveCart();
+      syncCartUI();
+    }
+
+    function applyPromoCode(code){
+      const c = (code || "").trim().toUpperCase();
+      const hint = document.getElementById("promoHint");
+
+      if(c === PROMO_CODE){
+        promo = { code: PROMO_CODE, pct: PROMO_PCT };
+        savePromo();
+        if(hint) hint.innerHTML = `<i class="fa-solid fa-circle-check text-iris mr-2"></i>Code actif : <b>${PROMO_CODE}</b> (-${PROMO_PCT}%)`;
+      } else {
+        promo = null;
+        savePromo();
+        if(hint) hint.innerHTML = `<span class="text-red-600 font-black">Code invalide</span>`;
+      }
+      syncCartUI();
+    }
+
+    // PRODUCTS RENDER
+    function renderProducts(){
+      const grid = document.getElementById("productGrid");
+      if(!grid) return;
+
+      grid.innerHTML = PRODUCTS.map(p => `
+        <div class="card rounded-2xl overflow-hidden">
+          <div class="relative">
+            <img src="${p.img}" alt="${p.name}" class="w-full h-[320px] object-cover bg-fog">
+            <div class="absolute top-4 left-4 px-4 py-2 rounded-full bg-white/95 border hairline text-xs font-black uppercase tracking-widest">
+              ${p.badge}
+            </div>
+            <div class="absolute top-4 right-4 px-4 py-2 rounded-full bg-ink text-white border border-white/10 text-xs font-black uppercase tracking-widest">
+              ${money(p.price)}
+            </div>
+          </div>
+          <div class="p-7">
+            <div class="flex items-center justify-between gap-3">
+              <div class="text-xl font-black uppercase italic text-ink">${p.name}</div>
+              <div class="text-amber-500 text-xs">
+                <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+              </div>
+            </div>
+            <p class="mt-3 text-slate-600 text-sm font-semibold leading-relaxed">${p.desc}</p>
+
+            <div class="mt-6 flex flex-col gap-3">
+              <button class="btn bg-ink text-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring" data-add="${p.id}">
+                <span class="relative z-10 flex items-center justify-center gap-2">Ajouter <i class="fa-solid fa-plus text-iris"></i></span>
+              </button>
+              <button class="btn bg-white px-6 py-4 rounded-xl font-black uppercase tracking-widest text-xs focus-ring border hairline" data-open-cart="1">
+                <span class="relative z-10 flex items-center justify-center gap-2">Voir panier <i class="fa-solid fa-bag-shopping"></i></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      grid.querySelectorAll("[data-add]").forEach(btn=>{
+        btn.addEventListener("click", ()=> addToCart(btn.getAttribute("data-add"), 1));
+      });
+      grid.querySelectorAll("[data-open-cart]").forEach(btn=>{
+        btn.addEventListener("click", ()=> openCart());
+      });
+    }
+
+    // CART UI
+    function renderCartItems(){
+      const wrap = document.getElementById("cartItems");
+      if(!wrap) return;
+
+      if(cart.length === 0){
+        wrap.innerHTML = `
+          <div class="rounded-2xl border hairline bg-mist p-5">
+            <div class="text-sm font-black uppercase tracking-widest text-slate-600">Panier vide</div>
+            <div class="mt-2 text-sm font-semibold text-slate-600">Ajoute un produit pour commencer.</div>
+          </div>
+        `;
+        return;
+      }
+
+      wrap.innerHTML = cart.map(it => `
+        <div class="rounded-2xl border hairline p-4 flex gap-3 items-start">
+          <img src="${it.img}" class="w-16 h-16 rounded-xl object-cover bg-fog border hairline" alt="${it.name}">
+          <div class="flex-1 min-w-0">
+            <div class="font-black uppercase text-ink text-sm leading-tight">${it.name}</div>
+            <div class="mt-1 text-sm font-semibold text-slate-600">${money(it.price)}</div>
+            <div class="mt-3 flex items-center gap-2">
+              <button class="w-9 h-9 rounded-xl border hairline grid place-items-center" data-dec="${it.id}" aria-label="Moins"><i class="fa-solid fa-minus"></i></button>
+              <div class="min-w-[40px] text-center font-black">${it.qty}</div>
+              <button class="w-9 h-9 rounded-xl border hairline grid place-items-center" data-inc="${it.id}" aria-label="Plus"><i class="fa-solid fa-plus"></i></button>
+              <button class="ml-auto text-xs font-black uppercase tracking-widest text-red-600" data-rm="${it.id}">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      wrap.querySelectorAll("[data-dec]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          const id = b.getAttribute("data-dec");
+          const it = cart.find(x=>x.id===id);
+          if(!it) return;
+          if(it.qty <= 1) removeFromCart(id);
+          else setQty(id, it.qty-1);
+        });
+      });
+
+      wrap.querySelectorAll("[data-inc]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          const id = b.getAttribute("data-inc");
+          const it = cart.find(x=>x.id===id);
+          if(!it) return;
+          setQty(id, it.qty+1);
+        });
+      });
+
+      wrap.querySelectorAll("[data-rm]").forEach(b=>{
+        b.addEventListener("click", ()=> removeFromCart(b.getAttribute("data-rm")));
+      });
+    }
+
+    function renderCheckoutItems(){
+      const wrap = document.getElementById("checkoutItems");
+      if(!wrap) return;
+
+      if(cart.length === 0){
+        wrap.innerHTML = `<div class="text-sm font-semibold text-slate-600">Aucun produit.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = cart.map(it => `
+        <div class="rounded-2xl border hairline p-4 flex gap-3 items-start">
+          <img src="${it.img}" class="w-14 h-14 rounded-xl object-cover bg-fog border hairline" alt="${it.name}">
+          <div class="flex-1 min-w-0">
+            <div class="font-black uppercase text-ink text-sm leading-tight">${it.name}</div>
+            <div class="mt-1 text-sm font-semibold text-slate-600">${it.qty} × ${money(it.price)}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function syncCartUI(){
+      const c1 = document.getElementById("cartCount");
+      const c2 = document.getElementById("cartCount2");
+      if(c1) c1.textContent = cartCount();
+      if(c2) c2.textContent = cartCount();
+
+      const sub = cartSubtotal();
+      const disc = discountAmount(sub);
+      const subAfter = Math.max(0, sub - disc);
+      const ship = shippingAmount(subAfter);
+      const tot = Math.max(0, subAfter + ship);
+
+      setText("subtotal", money(sub));
+      setText("discount", money(disc));
+      setText("shipping", money(ship));
+      setText("total", money(tot));
+
+      setText("cSubtotal", money(sub));
+      setText("cDiscount", money(disc));
+      setText("cShipping", money(ship));
+      setText("cTotal", money(tot));
+
+      const hint = document.getElementById("promoHint");
+      if(hint){
+        if(promo) hint.innerHTML = `<i class="fa-solid fa-circle-check text-iris mr-2"></i>Code actif : <b>${promo.code}</b> (-${promo.pct}%)`;
+        else hint.textContent = "";
+      }
+
+      renderCartItems();
+      renderCheckoutItems();
+    }
+
+    // OVERLAYS CONTROL (classes only)
+    const drawerOverlay = document.getElementById("drawerOverlay");
+    const cartDrawer    = document.getElementById("cartDrawer");
+    const checkoutOverlay = document.getElementById("checkoutOverlay");
+    const checkoutModal   = document.getElementById("checkoutModal");
+    const promoOverlay  = document.getElementById("promoOverlay");
+    const promoModal    = document.getElementById("promoModal");
+    const cookieModalOverlay = document.getElementById("cookieModalOverlay");
+    const cookieModal   = document.getElementById("cookieModal");
+
+    function openCart(){
+      drawerOverlay.classList.add("show");
+      cartDrawer.classList.add("open");
+      cartDrawer.setAttribute("aria-hidden", "false");
+      lockScroll();
+    }
+    function closeCart(){
+      drawerOverlay.classList.remove("show");
+      cartDrawer.classList.remove("open");
+      cartDrawer.setAttribute("aria-hidden", "true");
+      unlockScroll();
+    }
+
+    function openCheckout(){
+      if(cart.length === 0){ openCart(); return; }
+      checkoutOverlay.classList.add("show");
+      checkoutModal.classList.add("show");
+      checkoutModal.setAttribute("aria-hidden", "false");
+      lockScroll();
+    }
+    function closeCheckout(){
+      checkoutOverlay.classList.remove("show");
+      checkoutModal.classList.remove("show");
+      checkoutModal.setAttribute("aria-hidden", "true");
+      unlockScroll();
+    }
+
+    function canShowPromoPopup(){
+      const today = new Date().toDateString();
+      const last = localStorage.getItem("iris_promo_seen");
+      return last !== today;
+    }
+    function markPromoSeen(){
+      localStorage.setItem("iris_promo_seen", new Date().toDateString());
+    }
+
+    function openPromo(){
+      promoOverlay.classList.add("show");
+      promoModal.classList.add("show");
+      promoModal.setAttribute("aria-hidden", "false");
+      lockScroll();
+      markPromoSeen();
+    }
+    function closePromo(){
+      promoOverlay.classList.remove("show");
+      promoModal.classList.remove("show");
+      promoModal.setAttribute("aria-hidden", "true");
+      unlockScroll();
+    }
+
+    function openCookieModal(){
+      cookieModalOverlay.classList.add("show");
+      cookieModal.classList.add("show");
+      cookieModal.setAttribute("aria-hidden", "false");
+      lockScroll();
+    }
+    function closeCookieModal(){
+      cookieModalOverlay.classList.remove("show");
+      cookieModal.classList.remove("show");
+      cookieModal.setAttribute("aria-hidden", "true");
+      unlockScroll();
+    }
+
+    // Prevent close on inner click
+    cartDrawer.addEventListener("click", (e)=> e.stopPropagation());
+    document.querySelector(".checkoutBox")?.addEventListener("click", (e)=> e.stopPropagation());
+    document.querySelector(".promoBox")?.addEventListener("click", (e)=> e.stopPropagation());
+    document.querySelector(".cookieModalBox")?.addEventListener("click", (e)=> e.stopPropagation());
+    document.getElementById("chatPanel")?.addEventListener("click", (e)=> e.stopPropagation());
+
+    // Click outside closes
+    drawerOverlay.addEventListener("click", closeCart);
+    checkoutOverlay.addEventListener("click", closeCheckout);
+    promoOverlay.addEventListener("click", closePromo);
+    cookieModalOverlay.addEventListener("click", closeCookieModal);
+
+    // Escape key closes top-most overlay
+    document.addEventListener("keydown", (e)=>{
+      if(e.key !== "Escape") return;
+      if(lightboxOverlay.classList.contains("show")){ closeLightbox(); return; }
+      if(cookieModal.classList.contains("show")){ closeCookieModal(); return; }
+      if(promoModal.classList.contains("show")){ closePromo(); return; }
+      if(checkoutModal.classList.contains("show")){ closeCheckout(); return; }
+      if(cartDrawer.classList.contains("open")){ closeCart(); return; }
+      if(!menu.classList.contains("hidden")){ closeMenu(); return; }
+      if(chatPanel.classList.contains("show")){ closeChat(); return; }
+    });
+
+    // MENU
+    const menu = document.getElementById("menu");
+    function openMenu(){ menu.classList.remove("hidden"); lockScroll(); }
+    function closeMenu(){ menu.classList.add("hidden"); unlockScroll(); }
+
+    document.getElementById("openMenu")?.addEventListener("click", openMenu);
+    document.getElementById("closeMenu")?.addEventListener("click", closeMenu);
+    document.getElementById("menuBg")?.addEventListener("click", closeMenu);
+    menu?.querySelectorAll("a[href^='#']")?.forEach(a=> a.addEventListener("click", closeMenu));
+
+    // FAQ
+    const faqList = document.getElementById("faqList");
+    const faqSearch = document.getElementById("faqSearch");
+    const faqReset = document.getElementById("faqReset");
+    let currentTag = "";
+
+    function faqBind(){
+      faqList?.querySelectorAll(".faqItem .faqBtn").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const item = btn.closest(".faqItem");
+          item.classList.toggle("open");
+        });
+      });
+    }
+    function faqApplyFilters(){
+      const q = (faqSearch?.value || "").trim().toLowerCase();
+      faqList?.querySelectorAll(".faqItem").forEach(item=>{
+        const tags = (item.getAttribute("data-tags") || "");
+        const matchesTag = !currentTag || tags.includes(currentTag);
+        const matchesText = !q || item.textContent.toLowerCase().includes(q);
+        item.style.display = (matchesTag && matchesText) ? "" : "none";
+      });
+    }
+
+    faqSearch?.addEventListener("input", faqApplyFilters);
+    faqReset?.addEventListener("click", ()=>{
+      currentTag = "";
+      if(faqSearch) faqSearch.value = "";
+      faqApplyFilters();
+    });
+    document.querySelectorAll("[data-filter]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        currentTag = btn.getAttribute("data-filter") || "";
+        faqApplyFilters();
+      });
+    });
+
+    // BEFORE/AFTER
+    const imgBefore = document.getElementById("imgBefore");
+    const imgAfter  = document.getElementById("imgAfter");
+    const afterMask = document.getElementById("afterMask");
+    const baHandle  = document.getElementById("baHandle");
+    const baWrap    = document.getElementById("baWrap");
+
+    function setBA(pos){
+      const p = Math.max(0.05, Math.min(0.95, pos));
+      afterMask.style.width = (p*100) + "%";
+      baHandle.style.left = (p*100) + "%";
+    }
+
+    function initBA(){
+      if(imgBefore) imgBefore.src = ASSETS.before;
+      if(imgAfter)  imgAfter.src = ASSETS.after;
+
+      let dragging = false;
+
+      function getClientX(e){
+        if(e.touches && e.touches[0]) return e.touches[0].clientX;
+        return e.clientX;
+      }
+      function moveAt(e){
+        if(!dragging) return;
+        const rect = baWrap.getBoundingClientRect();
+        const x = getClientX(e) - rect.left;
+        setBA(x / rect.width);
+      }
+
+      const start = (e)=>{ dragging = true; moveAt(e); e.preventDefault?.(); };
+      const end   = ()=>{ dragging = false; };
+
+      baHandle.addEventListener("mousedown", start);
+      window.addEventListener("mousemove", moveAt);
+      window.addEventListener("mouseup", end);
+
+      baHandle.addEventListener("touchstart", start, {passive:false});
+      window.addEventListener("touchmove", (e)=>{ if(dragging){ moveAt(e); e.preventDefault(); } }, {passive:false});
+      window.addEventListener("touchend", end, {passive:true});
+
+      baWrap.addEventListener("click", (e)=>{
+        const rect = baWrap.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        setBA(x / rect.width);
+      });
+
+      window.addEventListener("resize", ()=>{
+        const w = parseFloat(afterMask.style.width) || 50;
+        setBA((w/100));
+      });
+    }
+
+    // NEWSLETTER
+    document.getElementById("newsletterForm")?.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const msg = document.getElementById("newsletterMsg");
+      if(msg) msg.innerHTML = `<span class="text-iris font-black"><i class="fa-solid fa-circle-check mr-2"></i>Inscription confirmée.</span>`;
+      e.target.reset();
+    });
+
+    // CHAT
+    const chatFab = document.getElementById("chatFab");
+    const chatPanel = document.getElementById("chatPanel");
+    const chatClose = document.getElementById("chatClose");
+    const chatMessages = document.getElementById("chatMessages");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+
+    function chatAdd(text, who="bot"){
+      const div = document.createElement("div");
+      div.className = "chatMsg " + (who === "user" ? "user" : "bot");
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    const BOT = {
+      intro: ["Salut 👋 Dis-moi ce que tu veux : Prix, Compatibilité, Montage, Livraison, Retours, Promo."],
+      prix: ["Pack : 199€ • Intercom : 129€ • Visière : 59€"],
+      compat: ["Envoie le modèle exact du casque + écran (Pinlock ou non)."],
+      montage: ["Installation rapide : préparation → pose → vérification."],
+      livraison: ["Livraison offerte dès 199€ • sinon 9,90€."],
+      retours: ["Retours 30 jours."],
+      promo: ["Code : IRIS10 (-10%)."]
+    };
+
+    function openChat(){
+      chatPanel.classList.add("show");
+      if(chatMessages.childElementCount === 0) BOT.intro.forEach(m => chatAdd(m, "bot"));
+      setTimeout(()=> chatInput?.focus(), 50);
+    }
+    function closeChat(){ chatPanel.classList.remove("show"); }
+
+    chatFab?.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      chatPanel.classList.contains("show") ? closeChat() : openChat();
+    });
+    chatClose?.addEventListener("click", closeChat);
+
+    document.querySelectorAll("[data-chip]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const key = btn.getAttribute("data-chip");
+        chatAdd(key.toUpperCase(), "user");
+        (BOT[key] || ["Ok."]).forEach(m => chatAdd(m, "bot"));
+      });
+    });
+
+    chatForm?.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const v = (chatInput?.value || "").trim();
+      if(!v) return;
+      chatAdd(v, "user");
+      chatInput.value = "";
+      chatAdd("Clique un bouton (Prix / Compatibilité / Montage / Livraison / Retours / Promo).", "bot");
+    });
+
+    document.body.addEventListener("click", ()=>{
+      if(chatPanel.classList.contains("show")) closeChat();
+    });
+
+    // COOKIES
+    const cookieBanner = document.getElementById("cookieBanner");
+
+    function showCookieBannerIfNeeded(){
+      const choice = localStorage.getItem("iris_cookie_choice");
+      if(!choice) cookieBanner.style.display = "block";
+    }
+
+    document.getElementById("cookieAccept")?.addEventListener("click", ()=>{
+      localStorage.setItem("iris_cookie_choice","accept");
+      localStorage.setItem("iris_cookie_analytics","true");
+      localStorage.setItem("iris_cookie_marketing","true");
+      cookieBanner.style.display = "none";
+    });
+
+    document.getElementById("cookieReject")?.addEventListener("click", ()=>{
+      localStorage.setItem("iris_cookie_choice","reject");
+      localStorage.setItem("iris_cookie_analytics","false");
+      localStorage.setItem("iris_cookie_marketing","false");
+      cookieBanner.style.display = "none";
+    });
+
+    document.getElementById("cookieCustomize")?.addEventListener("click", ()=>{
+      document.getElementById("cookieAnalytics").checked = safeParse(localStorage.getItem("iris_cookie_analytics"), false);
+      document.getElementById("cookieMarketing").checked = safeParse(localStorage.getItem("iris_cookie_marketing"), false);
+      openCookieModal();
+    });
+
+    document.getElementById("cookieCloseModal")?.addEventListener("click", closeCookieModal);
+
+    document.getElementById("cookieSave")?.addEventListener("click", ()=>{
+      localStorage.setItem("iris_cookie_choice","custom");
+      localStorage.setItem("iris_cookie_analytics", document.getElementById("cookieAnalytics")?.checked ? "true":"false");
+      localStorage.setItem("iris_cookie_marketing", document.getElementById("cookieMarketing")?.checked ? "true":"false");
+      cookieBanner.style.display = "none";
+      closeCookieModal();
+    });
+
+    document.getElementById("manageCookies")?.addEventListener("click", ()=>{
+      document.getElementById("cookieAnalytics").checked = safeParse(localStorage.getItem("iris_cookie_analytics"), false);
+      document.getElementById("cookieMarketing").checked = safeParse(localStorage.getItem("iris_cookie_marketing"), false);
+      openCookieModal();
+    });
+
+    // LIGHTBOX (lifestyle)
+    const lightboxOverlay = document.getElementById("lightboxOverlay");
+    const lightboxImg = document.getElementById("lightboxImg");
+
+    function openLightbox(src){
+      lightboxImg.src = src;
+      lightboxOverlay.classList.add("show");
+      lockScroll();
+    }
+    function closeLightbox(){
+      lightboxOverlay.classList.remove("show");
+      unlockScroll();
+    }
+    lightboxOverlay?.addEventListener("click", closeLightbox);
+
+    // BIND BUTTONS
+    document.getElementById("openCartBtn")?.addEventListener("click", openCart);
+    document.getElementById("openCartBtnMobile")?.addEventListener("click", ()=>{ closeMenu(); openCart(); });
+    document.getElementById("openCartFromProof")?.addEventListener("click", openCart);
+    document.getElementById("openCartFromShop")?.addEventListener("click", openCart);
+    document.getElementById("openCartFromAvis")?.addEventListener("click", openCart);
+    document.getElementById("openCartSticky")?.addEventListener("click", openCart);
+    document.getElementById("openCartFromLifestyle")?.addEventListener("click", openCart);
+
+    document.getElementById("closeCartBtn")?.addEventListener("click", closeCart);
+    document.getElementById("clearCart")?.addEventListener("click", clearCart);
+
+    document.getElementById("applyPromo")?.addEventListener("click", ()=>{
+      applyPromoCode(document.getElementById("promoInput")?.value || "");
+    });
+
+    document.getElementById("goCheckout")?.addEventListener("click", openCheckout);
+    document.getElementById("closeCheckout")?.addEventListener("click", closeCheckout);
+    document.getElementById("backToCart")?.addEventListener("click", ()=>{ closeCheckout(); openCart(); });
+    document.getElementById("applyPromoCheckout")?.addEventListener("click", ()=> applyPromoCode(PROMO_CODE));
+
+    document.getElementById("placeOrder")?.addEventListener("click", ()=>{
+      const status = document.getElementById("orderStatus");
+      if(status){
+        status.innerHTML = `<span class="text-iris font-black"><i class="fa-solid fa-circle-check mr-2"></i>Commande confirmée.</span>`;
+      }
+    });
+
+    document.getElementById("openPromoNow")?.addEventListener("click", openPromo);
+    document.getElementById("openPromoNowMobile")?.addEventListener("click", ()=>{ closeMenu(); openPromo(); });
+    document.getElementById("heroPromo")?.addEventListener("click", openPromo);
+    document.getElementById("openPromoFromShop")?.addEventListener("click", openPromo);
+    document.getElementById("proofPromo")?.addEventListener("click", openPromo);
+    document.getElementById("aboutPromo")?.addEventListener("click", openPromo);
+    document.getElementById("newsletterPromo")?.addEventListener("click", openPromo);
+    document.getElementById("supportPromo")?.addEventListener("click", openPromo);
+    document.getElementById("avisPromo")?.addEventListener("click", openPromo);
+    document.getElementById("lifestylePromo")?.addEventListener("click", openPromo);
+
+    document.getElementById("closePromo")?.addEventListener("click", closePromo);
+    document.getElementById("promoCloseSecondary")?.addEventListener("click", closePromo);
+
+    document.getElementById("promoApplyAndOpenCart")?.addEventListener("click", ()=>{
+      applyPromoCode(PROMO_CODE);
+      closePromo();
+      openCart();
+    });
+    document.getElementById("promoAddPack")?.addEventListener("click", ()=>{
+      addToCart("pack", 1);
+      applyPromoCode(PROMO_CODE);
+      closePromo();
+      openCart();
+    });
+
+    // All add buttons OUTSIDE product grid (grid buttons are bound in renderProducts)
+    document.querySelectorAll("[data-add]").forEach(btn=>{
+      if(btn.closest("#productGrid")) return;
+      btn.addEventListener("click", ()=> addToCart(btn.getAttribute("data-add"), 1));
+    });
+
+    // Lifestyle thumbnails lightbox bind
+    function bindLifestyleLightbox(){
+      document.querySelectorAll("[data-lightbox]").forEach(btn=>{
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const src = btn.getAttribute("data-lightbox");
+          openLightbox(src);
+        });
+      });
+    }
+
+    // INIT
+    const stockHint = document.getElementById("stockHint");
+    if(stockHint){
+      const n = 10 + Math.floor(Math.random()*9);
+      stockHint.textContent = "reste " + n;
+    }
+
+    renderProducts();
+    bindLifestyleLightbox();
+    initBA();
+    faqBind();
+    showCookieBannerIfNeeded();
+    syncCartUI();
+
+    // Promo auto (1 fois/jour) si marketing cookies ON par défaut (ou pas défini)
+    setTimeout(()=>{
+      const marketingAllowed = safeParse(localStorage.getItem("iris_cookie_marketing"), true);
+      if(marketingAllowed && canShowPromoPopup()) openPromo();
+    }, 6500);
+  </script>
+</body>
+</html>
